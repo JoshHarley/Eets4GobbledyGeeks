@@ -97,7 +97,7 @@ public class MenuSearcher {
                 System.out.println(createReceipt(geek, matchingBurgers.get(input)));
             } else if (input == index + 1){
                 Burger newBurger = getBurgerInfo(scan);
-                order = orderBurger(geek, newBurger, menu, scan);
+                System.out.println(createReceipt(geek, newBurger);
             } else {
                 System.out.println("wrong number");
             }
