@@ -1,6 +1,7 @@
 package Geeks;
 
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Burger {
     /**
@@ -13,6 +14,7 @@ public class Burger {
     private Patties pattie;
     private boolean cheese, pickle;
     private ArrayList<Sauces> sauceList;
+    private Scanner scan;
 
     public Burger() {
         /*
@@ -23,6 +25,7 @@ public class Burger {
         this.bun = "";
         this.sauceList = new ArrayList<>();
         this.description = "";
+        this.scan = new Scanner(System.in);
     }
 
     public Burger(String _id,String _name,String _price,String _bun, String _pattie, String _cheese, String _pickle, String _description){
@@ -111,7 +114,11 @@ public class Burger {
                 case "6" -> {
                     this.bun = "rye";
                 }
-                default -> System.out.println("You seem to have selected an invalid option, please try again.");
+                default -> {
+                    System.out.println("You seem to have selected an invalid option, please try again.");
+                    System.out.println("What type of bun would you like? (please enter a number)\n1: Brioche\n2: Light Rye\n3: Signature\n4: Multigrain\n5: Wholemeal\n6: Rye");
+                    this.setBun(this.scan.nextLine());
+                }
             }
         }
     }
@@ -135,7 +142,11 @@ public class Burger {
             case "chicken" -> this.pattie = Patties.Chicken;
             case "3" -> this.pattie = Patties.Veggie;
             case "vegan" -> this.pattie = Patties.Veggie;
-            default -> throw new IllegalStateException("Unexpected value: " + _pattie.toLowerCase());
+            default -> {
+                System.out.println("Invalid input, please try again");
+                System.out.println("What protein would you like on your burger? (please enter a number)?\n1: Beef\n2: Chicken\n3: Vegan");
+                this.setPattie(this.scan.nextLine());
+            }
         }
     }
 
@@ -154,7 +165,14 @@ public class Burger {
      * Sets whether the Burger object has cheese or not.
      */
     public void setCheese(String _cheese) {
-        this.cheese = _cheese.equalsIgnoreCase("yes");
+        if (_cheese.equalsIgnoreCase("yes")) {
+            this.cheese = true;
+        } else if (_cheese.equalsIgnoreCase("no")) {
+            this.cheese = false;
+        } else {
+            System.out.println("Invalid input, please try again");
+            setCheese(scan.nextLine());
+        }
     }
 
     /**
@@ -172,8 +190,14 @@ public class Burger {
      * Sets whether the Burger object has pickles or not.
      */
     public void setPickles(String _pickles) {
-        this.pickle = _pickles.equalsIgnoreCase("yes");
-    }
+        if (_pickles.equalsIgnoreCase("yes")) {
+            this.pickle = true;
+        } else if (_pickles.equalsIgnoreCase("no")) {
+            this.pickle = false;
+        } else {
+            System.out.println("Invalid input, please try again");
+            setPickles(scan.nextLine());
+        }    }
 
     /**
      * Return Burger object sauces when requested.
@@ -185,23 +209,6 @@ public class Burger {
     /**
      * Adds the provided sauce to the list of sauces based on the string provided using a switch against the available enums.
      */
-
-    public void setSauce(ArrayList<String> _sauce) {
-        for (String sauce : _sauce) {
-            switch (sauce.toLowerCase().trim()) {
-                //Compare string options for sauces and assign correct enum, else throw error
-                case "tomato" -> this.sauceList.add(Sauces.Tomato);
-                case "garlic" -> this.sauceList.add(Sauces.Garlic);
-                case "aioli" -> this.sauceList.add(Sauces.Aioli);
-                case "big mac" -> this.sauceList.add(Sauces.BigMac);
-                case "bbq" -> this.sauceList.add(Sauces.BBQ);
-                case "chilli" -> this.sauceList.add(Sauces.Chilli);
-                case "ranch" -> this.sauceList.add(Sauces.Ranch);
-                case "special" -> this.sauceList.add(Sauces.Special);
-                default -> throw new IllegalStateException("Unexpected value: " + sauce.toLowerCase());
-            }
-        }
-    }
 
     public void setSauce(String _sauce) {
         switch (_sauce.toLowerCase().trim()) {
@@ -222,7 +229,11 @@ public class Burger {
             case "6" -> this.sauceList.add(Sauces.Chilli);
             case "7" -> this.sauceList.add(Sauces.Ranch);
             case "8" -> this.sauceList.add(Sauces.Special);
-            default -> throw new IllegalStateException("Unexpected value: " + _sauce.toLowerCase());
+            default -> {
+                System.out.println("Invalid input, please try again");
+                System.out.println("What sauce would you like on your burger? (please enter a number):\n1: Tomato\n2: garlic\n3: Aioli\n4: Big Mac\n5: BBQ\n6: Chilli\n7: Ranch\n8: Special");
+                this.setSauce(this.scan.nextLine());
+            }
         }
     }
 
@@ -266,15 +277,20 @@ public class Burger {
      */
     @Override
     public String toString() {
+        String toPrint = "";
         // Set up string value for printing with initial values
-        String toPrint = this.name + " (" + this.id + ")\n" + this.description + "\n" + "Ingredients:\nBun type: " + this.bun + "\nMeat: " + this.pattie + "\nSauce/s: " + printSauce() + "\nOther: ";
+        if(this.name == "CUSTOM ORDER"){
+            toPrint = "Ingredients:\n" +  MenuSearcher.padLeftString("Bun type: ") + this.bun + "\n" +  MenuSearcher.padLeftString("Meat: ") + this.pattie + "\n" +  MenuSearcher.padLeftString("Sauce/s: ") + printSauce() + "\n" +  MenuSearcher.padLeftString("Other: ");
+        } else {
+            toPrint = this.name + " (" + this.id + ")\n" + this.description + "\n" + "Ingredients:\nBun type: " + this.bun + "\nMeat: " + this.pattie + "\nSauce/s: " + printSauce() + "\nOther: ";
+        }
         //find cheese and pickle values and add to string
         if (this.cheese && this.pickle) {
-            toPrint += "cheese, pickles";
+            toPrint += "Cheese, Pickles";
         } else if (this.cheese) {
-            toPrint += "cheese";
+            toPrint += "Cheese";
         } else if (this.pickle) {
-            toPrint += "pickles";
+            toPrint += "Pickles";
         }
         //add price to string
         if(this.name != "CUSTOM ORDER") {
@@ -323,10 +339,10 @@ public class Burger {
      * set up enums for pattie. Options for this project are beef, chicken and veggie
      */
     public enum Patties {
-        None("none"),
-        Beef("beef"),
-        Chicken("chicken"),
-        Veggie("vegan");
+        None("None"),
+        Beef("Beef"),
+        Chicken("Chicken"),
+        Veggie("Vegan");
 
         private String newPattie;
 
@@ -347,15 +363,15 @@ public class Burger {
      */
     enum Sauces {
         //enum values with string values
-        None("none"),
-        Tomato("tomato"),
-        Garlic("garlic"),
-        Aioli("aioli"),
-        BigMac("big mac"),
-        BBQ("bbq"),
-        Chilli("chilli"),
-        Ranch("ranch"),
-        Special("special");
+        None("None"),
+        Tomato("Tomato"),
+        Garlic("Garlic"),
+        Aioli("Aioli"),
+        BigMac("Big mac"),
+        BBQ("BBQ"),
+        Chilli("Chilli"),
+        Ranch("Ranch"),
+        Special("Special");
 
         //set up string return values
         private String newSauce;

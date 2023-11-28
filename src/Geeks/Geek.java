@@ -9,9 +9,7 @@ public class Geek {
         this.phoneNumber = _phone;
     }
 
-    public String getName(){
-        return this.name;
-    }
+    public String getName(){ return this.name; }
 
     public int getPhoneNumber(){
         return this.phoneNumber;
