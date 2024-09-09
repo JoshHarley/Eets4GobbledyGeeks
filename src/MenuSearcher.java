@@ -17,22 +17,15 @@ public class MenuSearcher {
     private static Menu menu;
 
     private static final String appName = "Eets 4 Gobbledy-Geeks";
-    private static JFrame mainWindow = null;
-    private static JPanel contentPanel = null;
-    private static JPanel imagePanel = null;
-    private static JPanel fixedPanel = null;
-    private static JPanel selectedPanel = null;
-    private static JComboBox<Type> typeSelectionCBox;
-
+    private static JFrame mainWindow;
+    private static JPanel contentPanel, imagePanel, fixedPanel, selectedPanel;
     private static SearchView searchView;
+    private static ResultsView resultsView;
 
     public static void main(String[] args) {
         menu = loadMenu(filePath);
         searchView = new SearchView(menu);
         setMainWindow();
-        DreamMenuItem dreamMenuItem = getFilters();
-        //processSearchResults(dreamMenuItem);
-        //System.exit(0);
     }
 
     /**
@@ -40,15 +33,15 @@ public class MenuSearcher {
      * as well as sets up the content panel.
      */
     public static void setMainWindow(){
-        mainWindow = new JFrame("Gobbledy Geeks");
+        mainWindow = new JFrame(appName);
         mainWindow.setIconImage(new ImageIcon("./gobbledy_geek_graphic_small.png").getImage());
         mainWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         mainWindow.setLayout(new BorderLayout());
-        mainWindow.setPreferredSize(new Dimension(900, 600));
-        mainWindow.setVisible(true);
+        mainWindow.setPreferredSize(new Dimension(900, 500));
+
         // Create panel to display constant options
         fixedPanel = new JPanel();
-        fixedPanel.setPreferredSize(new Dimension(600, 250));
+        fixedPanel.setPreferredSize(new Dimension(600, 300));
         fixedPanel.setLayout(new BorderLayout());
         fixedPanel.setVisible(true);
         mainWindow.setContentPane(fixedPanel);
@@ -56,7 +49,7 @@ public class MenuSearcher {
         // Create a panel to display a constant image
         imagePanel = new JPanel();
         imagePanel.setVisible(true);
-        imagePanel.setSize(new Dimension(300, 600));
+        imagePanel.setSize(new Dimension(300, 470));
         imagePanel.setBorder(new SoftBevelBorder(BevelBorder.RAISED));
         imagePanel.add(geekImage());
 
@@ -65,24 +58,17 @@ public class MenuSearcher {
         contentPanel.setLayout(new FlowLayout());
         contentPanel.setVisible(true);
         contentPanel.setBorder(new SoftBevelBorder(BevelBorder.LOWERED));
-        contentPanel.setPreferredSize(new Dimension(600, 400));
+        contentPanel.setPreferredSize(new Dimension(600, 300));
 
-        // Create a combobox for user type choice
-        typeSelectionCBox = new JComboBox<>(Type.values());
-        typeSelectionCBox.setSelectedIndex(0);
-        typeSelectionCBox.setPreferredSize(new Dimension(550, 50));
+
         // Set the panel for view selection as card layout and add the different views to it
-        selectedPanel = new JPanel(new CardLayout());
+        selectedPanel = searchView.getSelectedPanel();
         selectedPanel.add("Please Select", searchView.getWelcomeViewPanel());
         selectedPanel.add("Salad", searchView.saladOptionsView());
         selectedPanel.add("Burger", searchView.burgerOptionsView());
-        typeSelectionCBox.addActionListener(e -> {
-            CardLayout cards = (CardLayout) (selectedPanel.getLayout());
-            cards.show(selectedPanel, typeSelectionCBox.getItemAt(typeSelectionCBox.getSelectedIndex()).toString());
-        });
-        contentPanel.add(Box.createRigidArea(new Dimension(25, 0)));
-        contentPanel.add(typeSelectionCBox);
 
+        contentPanel.add(Box.createRigidArea(new Dimension(25, 0)));
+        contentPanel.add(searchView.getTypeComboBoxPanel());
         contentPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
         contentPanel.add(selectedPanel, BorderLayout.CENTER);
@@ -92,14 +78,14 @@ public class MenuSearcher {
 
         fixedPanel.add(imagePanel, BorderLayout.WEST);
         fixedPanel.add(contentPanel, BorderLayout.EAST);
-
+        mainWindow.setVisible(true);
         mainWindow.pack();
         mainWindow.setLocationRelativeTo(null);
     }
 
 
     public static JLabel geekImage(){
-        Image geekImage = new ImageIcon("./gobbledy_geek_graphic.png").getImage().getScaledInstance(290, 600,  Image.SCALE_SMOOTH);
+        Image geekImage = new ImageIcon("./gobbledy_geek_graphic.png").getImage().getScaledInstance(290, 450,  Image.SCALE_SMOOTH);
         ImageIcon geekImageIcon = new ImageIcon(geekImage);
         return new JLabel(geekImageIcon);
     }
@@ -109,7 +95,7 @@ public class MenuSearcher {
         Map<Filter,Object> filterMap = new LinkedHashMap<>();
         String[] options = {"Yes", "No", "I don't mind"};
 
-        Type type = (Type) typeSelectionCBox.getSelectedItem();
+        Type type = searchView.getMenuType();
         filterMap.put(Filter.TYPE,type);
 
         if(type==Type.BURGER) {
@@ -119,7 +105,9 @@ public class MenuSearcher {
             }
 
             Set<Sauce> dreamSauces = searchView.getSauceSet();
-            if(dreamSauces.size()>0) filterMap.put(Filter.SAUCE_S,dreamSauces);
+            if(!dreamSauces.contains(Sauce.NA)) {
+                if (dreamSauces.size() > 0) filterMap.put(Filter.SAUCE_S, dreamSauces);
+            }
         }
 
         if(type==Type.SALAD){
@@ -149,18 +137,18 @@ public class MenuSearcher {
         String tomatoSelection = searchView.getTomatoChoice();
         if(tomatoSelection.equalsIgnoreCase("Yes")) {
             tomato = true;
-            filterMap.put(Filter.CUCUMBER, tomato);
+            filterMap.put(Filter.TOMATO, tomato);
         } else if (tomatoSelection.equalsIgnoreCase("No")){
-            filterMap.put(Filter.CUCUMBER, tomato);
+            filterMap.put(Filter.TOMATO, tomato);
         }
 
         boolean pickle=false;
         String pickleSelection = searchView.getPickleChoice();
         if(pickleSelection.equalsIgnoreCase("Yes")) {
             pickle = true;
-            filterMap.put(Filter.CUCUMBER, pickle);
+            filterMap.put(Filter.PICKLES, pickle);
         } else if (pickleSelection.equalsIgnoreCase("No")){
-            filterMap.put(Filter.CUCUMBER, pickle);
+            filterMap.put(Filter.PICKLES, pickle);
         }
 
         double minPrice= searchView.getMinPrice();
@@ -172,67 +160,38 @@ public class MenuSearcher {
         List<MenuItem> matching = menu.findMatch(dreamMenuItem);
         MenuItem chosenItem = null;
         System.out.println("number of results: "+matching.size());
-        if(matching.size()>0) {
+        if(matching.size() == 0) {
+            int custom = JOptionPane.showConfirmDialog(fixedPanel, """
+                    Unfortunately none of our items meet your criteria :(
+                    \tWould you like to place a custom order?\s
+
+                    **Price to be calculated at checkout and may exceed your chosen range**.""",appName, JOptionPane.YES_NO_OPTION);
+            if(custom==0) chosenItem = new MenuItem(dreamMenuItem);
+        } else {
             Map<String, MenuItem> options = new HashMap<>();
             StringBuilder infoToShow = new StringBuilder("Matches found!! The following items meet your criteria: \n");
             for (MenuItem match : matching) {
                 infoToShow.append(match.getMenuItemInformation());
                 options.put(match.getMenuItemName(), match);
             }
-            String choice = (String) JOptionPane.showInputDialog(null, infoToShow + "\n\nPlease select which item you'd like to order:", appName, JOptionPane.INFORMATION_MESSAGE, icon, options.keySet().toArray(), "");
-            if(choice==null) System.exit(0);
-            chosenItem = options.get(choice);
+            resultsView = new ResultsView(options);
+            mainWindow.setContentPane(resultsView.displayResults());
+            mainWindow.revalidate();
+            mainWindow.setVisible(true);
         }
-        else{
-            int custom = JOptionPane.showConfirmDialog(null, """
-                    Unfortunately none of our items meet your criteria :(
-                    \tWould you like to place a custom order?\s
-
-                    **Price to be calculated at checkout and may exceed your chosen range**.""",appName, JOptionPane.YES_NO_OPTION);
-            if(custom==0) chosenItem = new MenuItem(dreamMenuItem);
-            else System.exit(0);
-        }
-        submitOrder(getUserContactInfo(),chosenItem);
-        JOptionPane.showMessageDialog(null,"Thank you! Your order has been submitted. "+
-                "Please wait for your name to be called out...",appName, JOptionPane.INFORMATION_MESSAGE);
     }
 
-    public static Geek getUserContactInfo(){
-        String name = JOptionPane.showInputDialog(null,"Please enter a name for the order.",appName, JOptionPane.QUESTION_MESSAGE);
-        if(name==null) System.exit(0);
-        long phoneNumber=0;
-        while(phoneNumber==0) {
-            try {
-                String userInput = JOptionPane.showInputDialog(null, "Please enter your phone number. \nIt will be used as your order number.", appName, JOptionPane.QUESTION_MESSAGE);
-                if(userInput==null) System.exit(0);
-                phoneNumber = Long.parseLong(userInput);
-            } catch (NumberFormatException e) {
-                phoneNumber = Long.parseLong(JOptionPane.showInputDialog(null, "Invalid entry. Please enter your phone number.", appName, JOptionPane.ERROR_MESSAGE));
-            }
-            int length = String.valueOf(phoneNumber).length();
-            if(length!=9) {
-                phoneNumber=0;
-                JOptionPane.showMessageDialog(null,"Invalid entry. Please enter your 10-digit phone number in the format 0412 123 345.",appName, JOptionPane.ERROR_MESSAGE);
-            }
-        }
-        return new Geek(name,phoneNumber);
+    public static void back(){
+        mainWindow.setContentPane(fixedPanel);
+        mainWindow.setVisible(true);
+        mainWindow.revalidate();
     }
 
-    public static void submitOrder(Geek geek, MenuItem menuItem) {
-        String filePath = geek.getName().replace(" ","_")+"_"+menuItem.getMenuItemIdentifier()+".txt";
-        Path path = Path.of(filePath);
-        String lineToWrite = "Order details:\n\t" +
-                "Name: "+geek.getName()+
-                " (0"+geek.getOrderNumber()+")";
-        if(menuItem.getMenuItemIdentifier()==0) lineToWrite+="\n\nCUSTOM ORDER...\n"+menuItem.getMenuItemInformation();
-        else lineToWrite+="\n\tItem: "+menuItem.getMenuItemName()+ " ("+menuItem.getMenuItemIdentifier()+")";
-
-        try {
-            Files.writeString(path, lineToWrite);
-        }catch (IOException io){
-            System.out.println("Order could not be placed. \nError message: "+io.getMessage());
-            System.exit(0);
-        }
+    public static void getContactInfoAndSubmit(MenuItem menuItem){
+        ContactInfoView contactInfoView = new ContactInfoView(menuItem);
+        mainWindow.setContentPane(contactInfoView.displayContactInfoForm());
+        mainWindow.setVisible(true);
+        mainWindow.revalidate();
     }
 
     public static Menu loadMenu(String filePath) {
@@ -263,7 +222,7 @@ public class MenuSearcher {
                 System.exit(0);
             }
 
-            Image image = new ImageIcon("./" + menuItemIdentifier + ".png").getImage();
+            Image image = new ImageIcon("./images/" + menuItemIdentifier + ".png").getImage();
 
             Type type = null;
             try{

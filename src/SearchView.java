@@ -7,23 +7,34 @@ import java.util.*;
 
 public class SearchView {
     private final Menu menu;
-
+    private Type menuType;
     private double minPrice, maxPrice;
     private String tomatoChoice, pickleChoice, cucumberChoice, bunChoice;
     private JLabel feedBack;
+    private final String appName = "Eets 4 Gobbledy-Geeks";
     private Meat meatChoice;
     private Dressing dressingChoice;
     private JCheckBox cheeseChkBox;
     private boolean cheeseStatus;
     private Set<String> leafyGreensSet;
     private Set<Sauce> sauceSet;
-    private Map<Filter, Object> filterMap;
+    private final JPanel selectedPanel;
+    private JTextField minPriceTxtF, maxPriceTxtF;
 
     public SearchView(Menu _menu){
         this.menu = _menu;
         this.minPrice = 0;
         this.maxPrice = menu.getMaxPrice();
-        this.filterMap = new HashMap<>();
+        this.selectedPanel = new JPanel(new CardLayout());
+        this.meatChoice = Meat.NA;
+        this.tomatoChoice = "NA";
+        this.cucumberChoice = "NA";
+        this.pickleChoice = "NA";
+        //this.bunChoice = "NA";
+        this.dressingChoice = Dressing.NA;
+        this.menuType = Type.SELECT;
+        this.feedBack = new JLabel("");
+        this.feedBack.setPreferredSize(new Dimension(300, 20));
     }
 
     /**
@@ -35,7 +46,7 @@ public class SearchView {
         JPanel fixed = new JPanel();
         fixed.setLayout(new BorderLayout());
         fixed.setVisible(true);
-        fixed.setPreferredSize(new Dimension(600, 293));
+        fixed.setPreferredSize(new Dimension(600, 210));
 
         // Create panel for left side
         JPanel left = new JPanel();
@@ -43,9 +54,9 @@ public class SearchView {
         left.setPreferredSize(new Dimension(300, 125));
 
         // Add left panel options
-        left.add(Box.createRigidArea(new Dimension(300, 30)));
+        left.add(Box.createRigidArea(new Dimension(300, 10)));
         left.add(getCustomRadioChoicePanel("Tomato?"));
-        left.add(Box.createRigidArea(new Dimension(300, 15)));
+        left.add(Box.createRigidArea(new Dimension(300, 5)));
         left.add(getCustomRadioChoicePanel("Pickles?"));
 
         // Create panel for right ride
@@ -54,32 +65,41 @@ public class SearchView {
         right.setPreferredSize(new Dimension(300, 125));
 
         // Add right panel options
-        right.add(Box.createRigidArea(new Dimension(300, 30)));
-        right.add(getMeatChoicePanel());
         right.add(Box.createRigidArea(new Dimension(300, 10)));
+        right.add(getMeatChoicePanel());
+        right.add(Box.createRigidArea(new Dimension(300, 5)));
         right.add(getCheeseChoicePanel());
 
         // Set up the search button
         JButton searchBtn = new JButton("Search");
-        searchBtn.setPreferredSize(new Dimension(590, 30));
-        searchBtn.addActionListener(e -> getChoices());
+        searchBtn.setPreferredSize(new Dimension(578, 30));
+        searchBtn.addActionListener(e -> {
+                    if(menuType == Type.SELECT) {
+                        JOptionPane.showMessageDialog(fixed, "A menu item type (burger or salad) selection must be made to perform a search",
+                                appName, JOptionPane.INFORMATION_MESSAGE, cheeseChkBox.getIcon());
+                    } else if (!checkMinPrice() || !checkMaxPrice()) {
+                        JOptionPane.showMessageDialog(fixed, "The price range entered is not valid",
+                                appName, JOptionPane.INFORMATION_MESSAGE, cheeseChkBox.getIcon());
+                    } else {
+                        getChoices();
+                    }
+            DreamMenuItem dreamMenuItem = MenuSearcher.getFilters();
+            MenuSearcher.processSearchResults(dreamMenuItem);
+                });
 
         // Set up feedback label
-        this.feedBack = new JLabel("");
         this.feedBack.setForeground(Color.red);
-        this.feedBack.setPreferredSize(new Dimension(300, 15));
         this.feedBack.setHorizontalTextPosition(SwingConstants.CENTER);
 
         // Create panel for the bottom
         JPanel bottom = new JPanel();
-        bottom.setPreferredSize(new Dimension(300, 150));
+        bottom.setPreferredSize(new Dimension(300, 100));
 
         // Add bottom panel options
-        bottom.add(Box.createRigidArea(new Dimension(600, 15)));
         bottom.add(getMinMaxPricePanel());
-        bottom.add(Box.createRigidArea(new Dimension(600, 5)));
         bottom.add(this.feedBack);
-        bottom.add(Box.createRigidArea(new Dimension(600, 5)));
+        bottom.add(Box.createRigidArea(new Dimension(600, 3)));
+        bottom.add(Box.createRigidArea(new Dimension(7, 0)));
         bottom.add(searchBtn);
 
         // Add left, right and bottom panels to the fixed panel
@@ -89,6 +109,37 @@ public class SearchView {
         return fixed;
     }
 
+    public void getChoices(){
+        System.out.println(getBunChoice());
+        System.out.println(getCheeseStatus());
+        System.out.println(getTomatoChoice());
+        System.out.println(getPickleChoice());
+        System.out.println(getMeatChoice());
+        System.out.println(getCucumberChoice());
+        System.out.println(getSauceSet());
+    }
+
+    /**
+     * A method to set yp a combo box for the menu type selection
+     * @return - A JPanel
+     */
+    public JPanel getTypeComboBoxPanel(){
+        JPanel typeComboBoxPanel = new JPanel();
+        typeComboBoxPanel.setPreferredSize(new Dimension(550, 35));
+        // Create a combobox for user type choice
+        JComboBox<Type> typeSelectionCBox;
+        typeSelectionCBox = new JComboBox<>(Type.values());
+        typeSelectionCBox.setSelectedIndex(0);
+        typeSelectionCBox.setPreferredSize(new Dimension(550, 30));
+        typeSelectionCBox.addActionListener(e -> {
+            this.menuType = (Type) typeSelectionCBox.getSelectedItem();
+            CardLayout cards = (CardLayout) (this.selectedPanel.getLayout());
+            cards.show(this.selectedPanel, typeSelectionCBox.getItemAt(typeSelectionCBox.getSelectedIndex()).toString());
+        });
+        typeComboBoxPanel.add(typeSelectionCBox);
+        return typeComboBoxPanel;
+    }
+
     /**
      * A method the creates a JPanel offering a choice of meats through the use of a JComboBox
      * and the Meat enums values
@@ -96,30 +147,14 @@ public class SearchView {
      */
     private JPanel getMeatChoicePanel(){
         JPanel meatPanel = new JPanel();
-        meatPanel.setPreferredSize(new Dimension(300, 40));
+        meatPanel.setPreferredSize(new Dimension(300, 30));
         JLabel meatLbl = new JLabel("Meat:");
         JComboBox<Meat> meatOptionsCBox = new JComboBox<>(Meat.values());
-        meatOptionsCBox.setSelectedItem(Meat.SELECT);
+        meatOptionsCBox.setSelectedItem(this.meatChoice);
         meatOptionsCBox.addItemListener(e -> this.meatChoice = (Meat)e.getItem());
         meatPanel.add(meatLbl);
         meatPanel.add(meatOptionsCBox);
         return meatPanel;
-    }
-
-    /**
-     * A method to be used in conjunction with the search button. Used to fetching the selected items
-     * for each choice available.
-     */
-    public void getChoices(){
-        System.out.println("meat: " + getMeatChoice());
-        System.out.println("pickle: " + getPickleChoice());
-        System.out.println("tomato: " + getTomatoChoice());
-        System.out.println("Cheese: " + getCheeseStatus());
-        System.out.println("min price: " + getMinPrice());
-        System.out.println("max price: " + getMaxPrice());
-        System.out.println("cucumber: " + getCucumberChoice());
-        System.out.println("bun: " + getBunChoice());
-        System.out.println("dressing: " + getDressingChoice());
     }
 
     /**
@@ -147,7 +182,7 @@ public class SearchView {
      */
     private JPanel getCustomRadioChoicePanel(String description){
         JPanel radioPanel = new JPanel();
-        radioPanel.setPreferredSize(new Dimension(300, 30));
+        radioPanel.setPreferredSize(new Dimension(300, 25));
         JLabel descriptionLabel = new JLabel(description);
         JRadioButton yesBtn = new JRadioButton("Yes");
         yesBtn.setActionCommand("Yes");
@@ -190,28 +225,28 @@ public class SearchView {
         JPanel minMaxPricePanel = new JPanel();
         minMaxPricePanel.setAlignmentX(0);
         minMaxPricePanel.setLayout(new FlowLayout());
-        minMaxPricePanel.setPreferredSize(new Dimension(600, 50));
+        minMaxPricePanel.setPreferredSize(new Dimension(600, 25));
         // Set up min price textfield and label
-        JTextField minPriceTxtF = new JTextField(10);
-        minPriceTxtF.setText("0.00");
+        this.minPriceTxtF = new JTextField(10);
+        this.minPriceTxtF.setText("0.00");
         JLabel minPriceLbl = new JLabel("Min Price:   $");
 
-        JTextField maxPriceTxtF = new JTextField(10);
+        this.maxPriceTxtF = new JTextField(10);
         String maxPriceString = String.format("%.2f", this.maxPrice);
-        maxPriceTxtF.setText(String.valueOf(maxPriceString));
+        this.maxPriceTxtF.setText(String.valueOf(maxPriceString));
         JLabel maxPriceLbl = new JLabel("Max Price:   $");
         // Set document listener for minimum price textfield
-        minPriceTxtF.getDocument().addDocumentListener(new DocumentListener() {
+        this.minPriceTxtF.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                if (!checkMinPrice(minPriceTxtF)) minPriceTxtF.requestFocusInWindow();
-                checkMaxPrice(maxPriceTxtF);
+                if (!checkMinPrice()) minPriceTxtF.requestFocusInWindow();
+                checkMaxPrice();
 
             }
             @Override
             public void removeUpdate(DocumentEvent e) {
-                if (!checkMinPrice(minPriceTxtF)) minPriceTxtF.requestFocusInWindow();
-                checkMaxPrice(maxPriceTxtF);
+                if (!checkMinPrice()) minPriceTxtF.requestFocusInWindow();
+                checkMaxPrice();
 
             }
             @Override
@@ -220,17 +255,17 @@ public class SearchView {
         });
 
         // Set document listener for max price textfield
-        maxPriceTxtF.getDocument().addDocumentListener(new DocumentListener() {
+        this.maxPriceTxtF.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                if (!checkMaxPrice(maxPriceTxtF)) maxPriceTxtF.requestFocusInWindow();
-                checkMinPrice(minPriceTxtF);
+                if (!checkMaxPrice()) maxPriceTxtF.requestFocusInWindow();
+                checkMinPrice();
 
             }
             @Override
             public void removeUpdate(DocumentEvent e) {
-                if (!checkMaxPrice(maxPriceTxtF)) maxPriceTxtF.requestFocusInWindow();
-                checkMinPrice(minPriceTxtF);
+                if (!checkMaxPrice()) maxPriceTxtF.requestFocusInWindow();
+                checkMinPrice();
             }
             @Override
             public void changedUpdate(DocumentEvent e) {
@@ -238,34 +273,35 @@ public class SearchView {
         });
 
         minMaxPricePanel.add(minPriceLbl);
-        minMaxPricePanel.add(minPriceTxtF);
+        minMaxPricePanel.add(this.minPriceTxtF);
         minMaxPricePanel.add(Box.createRigidArea(new Dimension(15, 0)));
         minMaxPricePanel.add(maxPriceLbl);
-        minMaxPricePanel.add(maxPriceTxtF);
+        minMaxPricePanel.add(this.maxPriceTxtF);
         return minMaxPricePanel;
     }
 
     /**
      * A method to check the min price field, validating that a number was entered and that the number
      * was above 0 and less than max.
-     * @param minPriceTxt - A JTextField containing the min price value as input by user
      * @return - A boolean value
      */
-    private boolean checkMinPrice(JTextField minPriceTxt){
+    private boolean checkMinPrice(){
         try {
-            double min = Double.parseDouble(minPriceTxt.getText());
-            System.out.println(min);
-            System.out.println(this.maxPrice);
-            if (min < 0 || min > this.maxPrice) {
-                this.feedBack.setText("Minimum price must be more than 0 and less than the maximum price");
+            double min = Double.parseDouble(this.minPriceTxtF.getText());
+            double max = Double.parseDouble(this.maxPriceTxtF.getText());
+
+            if (min < 0 || min > max) {
+                this.feedBack.setText("<html>Minimum price must be more than 0 and less than the maximum price</html>");
+                this.minPriceTxtF.selectAll();
                 return false;
             } else {
                 this.minPrice = min;
-                this.feedBack.setText(" ");
+                this.feedBack.setText("");
                 return true;
             }
         } catch (NumberFormatException nf) {
-            this.feedBack.setText("Min price input was not a number, please try again");
+            this.feedBack.setText("<html>Min price input was not a number, please try again</html>");
+            this.minPriceTxtF.selectAll();
             return false;
         }
     }
@@ -273,24 +309,25 @@ public class SearchView {
     /**
      * A method to check that the value in the max price textfield is a number and is not less
      * than the minimum price value.
-     * @param maxPriceTxt - A JTextField containing the max price value as input by user
      * @return - A boolean
      */
-    private boolean checkMaxPrice(JTextField maxPriceTxt){
+    private boolean checkMaxPrice(){
         try {
-            double max = Double.parseDouble(maxPriceTxt.getText());
-            System.out.println(max);
-            System.out.println(this.minPrice);
-            if (max < this.minPrice) {
-                this.feedBack.setText("Maximum price must be more than the minimum price");
+            double max = Double.parseDouble(this.maxPriceTxtF.getText());
+            double min = Double.parseDouble(this.minPriceTxtF.getText());
+            System.out.println(min + ": " + max);
+            if (max < min) {
+                this.feedBack.setText("<html>The minimum price must be less than the maximum price</html>");
+                this.maxPriceTxtF.selectAll();
                 return false;
             } else {
                 this.maxPrice = max;
-                this.feedBack.setText(" ");
+                this.feedBack.setText("");
                 return true;
             }
         } catch (NumberFormatException nf){
-            this.feedBack.setText("Max price input was not a number, please try again");
+            this.feedBack.setText("<html>Max price input was not a number, please try again</html>");
+            this.maxPriceTxtF.selectAll();
             return false;
         }
     }
@@ -317,7 +354,7 @@ public class SearchView {
         this.leafyGreensSet = new HashSet<>();
         JLabel leafyGreenLbl = new JLabel("Please select 1 or more leafy green:");
         JLabel leafyGreenInfoLbl = new JLabel("(Hold ctrl to multi-select leafy greens)");
-        JList<Object> allLeafyGreens = new JList<>(menu.getAllIngredientTypes(Filter.LEAFY_GREENS).toArray());
+        JList<Object> allLeafyGreens = new JList<>(this.menu.getAllIngredientTypes(Filter.LEAFY_GREENS).toArray());
         allLeafyGreens.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         allLeafyGreens.addListSelectionListener(e ->
                 this.leafyGreensSet.add((String)allLeafyGreens.getSelectedValue()));
@@ -369,7 +406,7 @@ public class SearchView {
         saucePanel.setPreferredSize(new Dimension(300, 200));
         JLabel sauceLbl = new JLabel("Please choose one or more sauces?");
         JLabel sauceInfoLbl = new JLabel("(Hold ctrl to multi-select sauces)");
-        sauceSet = new HashSet<>();
+        this.sauceSet = new HashSet<>();
         JList<Object> allSauces = new JList<>(Sauce.values());
         allSauces.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         allSauces.addListSelectionListener(e -> this.sauceSet.add((Sauce) allSauces.getSelectedValue()));
@@ -387,6 +424,8 @@ public class SearchView {
         bunTypePanel.setVisible(true);
         JLabel bunTypeLbl = new JLabel("Preferred bun type?");
         JComboBox<Object> bunTypeCBox = new JComboBox<>(menu.getAllIngredientTypes(Filter.BUN).toArray());
+        bunTypeCBox.setSelectedItem("I don't mind");
+        this.bunChoice = "I don't mind";
         bunTypeCBox.addItemListener(e -> this.bunChoice = (String) bunTypeCBox.getSelectedItem());
         bunTypePanel.add(Box.createRigidArea(new Dimension(300, 50)));
         bunTypePanel.add(Box.createRigidArea(new Dimension(25, 0)));
@@ -471,4 +510,10 @@ public class SearchView {
     public Meat getMeatChoice() {
         return this.meatChoice;
     }
+
+    public Type getMenuType(){
+        return this.menuType;
+    }
+    public JPanel getSelectedPanel(){ return this.selectedPanel; }
+
 }

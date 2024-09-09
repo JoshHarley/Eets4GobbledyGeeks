@@ -1,3 +1,4 @@
+import javax.swing.*;
 import java.awt.*;
 import java.text.DecimalFormat;
 
@@ -48,11 +49,15 @@ public class MenuItem {
         return price;
     }
     public DreamMenuItem getDreamMenuItem(){ return dreamMenuItem;}
+    public ImageIcon getImage(int width, int height) {
+        Image scaledImage = this.image.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+        return new ImageIcon(scaledImage);
+    }
 
     //menu info
     public String getMenuItemInformation(){
         DecimalFormat df = new DecimalFormat("0.00");
-        String output = "\n*******************************************";
+        String output = "";
         if(getMenuItemIdentifier()!=0) output+="\n"+this.getMenuItemName()+" ("+getMenuItemIdentifier()+")"+ "\n"+this.getDescription();
         output+=getDreamMenuItem().getInfo();
         if(price==-1) return output;
